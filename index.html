@@ -162,6 +162,28 @@
             80% { transform: rotateX(360deg) rotateY(360deg) rotateZ(240deg) scale(1.1); }
             100% { transform: rotateX(360deg) rotateY(360deg) rotateZ(360deg) scale(1); }
         }
+        .dice-roll-prompt {
+            position: absolute;
+            bottom: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: var(--highlight-color);
+            color: white;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+            pointer-events: none;
+            z-index: 50;
+        }
+        .dice-roll-prompt.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(-5px);
+        }
+
 
         .property-color { transition: background-color 0.5s; height: 15px; width: 100%; }
         .board-row { display: flex; }
@@ -226,8 +248,25 @@
             box-shadow: 0 25px 50px -12px var(--shadow-color); border: 1px solid var(--border-color);
             animation: modal-appear-enhanced 0.55s cubic-bezier(0.68, -0.6, 0.265, 1.6);
             border-radius: 0.75rem; padding: 1.5rem; max-width: 500px; width: 95%;
+            position: relative;
         }
         @keyframes modal-appear-enhanced { from { opacity: 0; transform: translateY(50px) scale(0.9); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        .modal-close-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: transparent;
+            border: none;
+            font-size: 1.5rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 0.25rem;
+            line-height: 1;
+        }
+        .modal-close-btn:hover {
+            color: var(--highlight-color);
+        }
+
 
         .money-change {
             position: fixed;
@@ -299,6 +338,7 @@
             #mascot { max-width: 150px; }
             .board-center .text-3xl { font-size: 1.5rem; } .board-center .text-lg { font-size: 0.9rem; }
             .dice { width: 80px; height: 40px; } .dice i { font-size: 1.5rem !important; }
+            .player-piece { width: 18px; height: 18px; font-size: 8px;}
         }
         @media (max-width: 767px) {
             .board-cell { width: 50px; height: 50px; } .board-left, .board-right { width: 50px; }
@@ -320,6 +360,7 @@
             .container { padding-left: 2px; padding-right: 2px;}
             .game-title { font-size: 1.5rem; margin-bottom: 0.5rem;}
             .dice { width: 60px; height: 30px; } .dice i { font-size: 1.1rem !important; }
+            .player-piece { width: 12px; height: 12px; font-size: 6px;}
         }
         .confetti-piece { position: absolute; width: 10px; height: 20px; background-color: #f00; top: -20px; animation: fall linear; }
         @keyframes fall { to { transform: translateY(100vh) rotate(720deg); opacity: 0; } }
@@ -340,6 +381,7 @@
         <div class="flex flex-col lg:flex-row gap-6">
             <div class="w-full lg:w-2/3">
                 <div id="gameBoard" class="bg-transparent p-2 sm:p-3 rounded-xl shadow-2xl">
+                    <!-- Board HTML -->
                     <div class="board-row board-top">
                         <div class="board-cell" data-position="20" data-type="special"><div class="property-color bg-purple-500 dark:bg-purple-600"></div><div class="board-cell-content"><div class="cell-icon cell-parking"></div><div class="text-xs">自由停車</div></div></div>
                         <div class="board-cell" data-position="21" data-type="property"><div class="property-color bg-red-500 dark:bg-red-600"></div><div class="board-cell-content"><div class="text-xs">臺北</div><div class="text-xs font-bold mt-1">$200</div></div></div>
@@ -422,22 +464,41 @@
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
                             玩家設置
                         </h3>
-                        <div class="flex flex-col sm:flex-row gap-2 sm:gap-3">
-                            <div class="relative flex-1">
+                        <div class="mb-3">
+                            <label for="playerCount" class="block text-sm font-medium text-[var(--text-primary)] mb-1">玩家人數:</label>
+                            <div class="relative">
                                 <select id="playerCount" class="w-full p-2 sm:p-2.5 border border-[var(--border-color)] rounded-lg appearance-none bg-[var(--panel-bg)] pr-8 focus:outline-none focus:ring-2 focus:ring-[var(--highlight-color)] text-[var(--text-primary)] transition-all text-sm">
-                                    <option value="2">2 位</option><option value="3">3 位</option><option value="4">4 位</option>
+                                    <!-- Options populated by JS -->
                                 </select>
                                 <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-[var(--text-secondary)]"><svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg></div>
                             </div>
+                        </div>
+                        <div id="playerNamesContainer" class="mb-3 space-y-2 max-h-32 overflow-y-auto">
+                            <!-- Player name inputs will be generated here by JS -->
+                        </div>
+                        <div class="flex flex-col sm:flex-row gap-2 sm:gap-3 mb-3">
                             <button id="startGameBtn" class="action-btn flex-1 flex items-center justify-center py-2 sm:py-2.5">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>開始遊戲
                             </button>
                         </div>
+                        <!-- Reset button was here, moved outside -->
                     </div>
-                    <button id="showRulesBtn" class="action-btn w-full py-2 text-sm bg-teal-500 hover:bg-teal-600 dark:bg-teal-600 dark:hover:bg-teal-500 flex items-center justify-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                        遊戲規則
-                    </button>
+
+                    <div class="flex flex-col sm:flex-row gap-2 mt-2">
+                        <button id="showRulesBtn" class="action-btn flex-1 py-2 text-sm bg-teal-500 hover:bg-teal-600 dark:bg-teal-600 dark:hover:bg-teal-500 flex items-center justify-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                            遊戲規則
+                        </button>
+                        <button id="downloadLogBtn" class="action-btn flex-1 py-2 text-sm bg-sky-500 hover:bg-sky-600 dark:bg-sky-600 dark:hover:bg-sky-500 flex items-center justify-center" disabled>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                            下載歷程
+                        </button>
+                        <button id="resetGameBtn" class="action-btn flex-1 py-2 text-sm bg-red-500 hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-500 flex items-center justify-center" disabled>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m-15.357-2a8.001 8.001 0 0115.357-2m0 0H15" /></svg>
+                            重設遊戲
+                        </button>
+                    </div>
+
 
                     <div id="currentPlayerInfoDiv" class="hidden animate__animated animate__fadeInUp">
                         <h3 class="text-base sm:text-lg font-semibold mb-2 flex items-center text-[var(--text-primary)]">
@@ -452,11 +513,12 @@
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path d="M17.293 3.293A8 8 0 0012 1a8.012 8.012 0 00-5.655 2.256C4.938 4.68 4 6.753 4 9c0 1.96.688 3.886 1.994 5.334A8.007 8.007 0 0017 14.59V19h-2v-4.5a3.5 3.5 0 00-6.126-2.374l-1-1A5.485 5.485 0 016 9c0-1.828.804-3.534 2.086-4.714A6.007 6.007 0 0112 3a6.009 6.009 0 014.714 2.286A5.488 5.488 0 0118 9.614V14a1 1 0 01-1 1h-2.5a1 1 0 110-2H16V9a1 1 0 10-2 0v1a3 3 0 106 0V4.707A1.003 1.003 0 0017.293 3.293zM9 12a1 1 0 100-2 1 1 0 000 2z" /></svg>
                             擲骰子 / 行動
                         </h3>
-                        <div class="flex gap-3 sm:gap-4 items-center mb-2 sm:mb-3">
+                        <div class="flex gap-3 sm:gap-4 items-center mb-2 sm:mb-3 relative">
                             <div class="dice-container">
                                 <div id="diceDisplay" class="dice">
                                     <!-- Populated by JS -->
                                 </div>
+                                <div id="diceRollPrompt" class="dice-roll-prompt"></div>
                             </div>
                             <button id="rollDiceBtn" class="action-btn flex items-center px-4 sm:px-5 py-2 sm:py-2.5">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /></svg>
@@ -488,12 +550,14 @@
         </div>
 
         <div class="footer text-center text-[var(--text-secondary)]">
-            Copyright © Liyuchiutiger Gongminshen      </div>
+            Copyright © Liyuchiutiger Gongminshen
+        </div>
     </div>
 
     <!-- Modals -->
     <div id="buyPropertyModal" class="modal" aria-hidden="true">
         <div class="modal-content">
+             <button id="closeBuyPropertyModalBtn" class="modal-close-btn" onclick="closeBuyPropertyModal(); attemptToEndTurn();">&times;</button>
             <h3 class="text-xl font-bold mb-4 flex items-center text-[var(--highlight-color)]">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
@@ -509,6 +573,7 @@
     </div>
     <div id="rulesModal" class="modal" aria-hidden="true">
         <div class="modal-content rules-modal-content">
+            <button id="closeRulesBtn" class="modal-close-btn">&times;</button>
             <h3 class="text-xl font-bold mb-4 flex items-center text-[var(--highlight-color)]">遊戲規則</h3>
             <h4>目標：</h4>
             <p>成為最有錢的玩家，讓其他玩家破產！</p>
@@ -537,13 +602,11 @@
             <p>若玩家無法支付租金或稅金，則宣告破產，退出遊戲。其擁有的地產歸還銀行（即變為無主狀態）。</p>
             <h4>勝利條件：</h4>
             <p>最後一位未破產的玩家獲勝。</p>
-            <div class="flex justify-end mt-6">
-                <button id="closeRulesBtn" class="action-btn bg-gray-500 hover:bg-gray-600 dark:bg-gray-600 dark:hover:bg-gray-500 px-4 py-2">關閉</button>
-            </div>
         </div>
     </div>
     <div id="chanceModal" class="modal" aria-hidden="true">
         <div class="modal-content">
+            <button id="closeChanceModalBtnX" class="modal-close-btn" onclick="closeChanceModal(); attemptToEndTurn();">&times;</button>
             <h3 class="text-xl font-bold mb-4 flex items-center text-[var(--highlight-color)]">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -558,6 +621,7 @@
     </div>
     <div id="actionInfoModal" class="modal" aria-hidden="true">
         <div class="modal-content">
+            <button id="closeActionInfoModalBtnX" class="modal-close-btn" onclick="closeActionInfoModal(); attemptToEndTurn();">&times;</button>
             <h3 id="actionInfoTitle" class="text-xl font-bold mb-4 flex items-center text-[var(--highlight-color)]">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                      <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -580,9 +644,16 @@
 
         const diceInitialHTML = `<i class="fas fa-question-circle text-2xl sm:text-3xl text-[var(--text-primary)]"></i> <i class="fas fa-question-circle text-2xl sm:text-3xl text-[var(--text-primary)]"></i>`;
         const diceFaces = ["", "one", "two", "three", "four", "five", "six"];
+        const playerColors = [
+            "bg-red-500", "bg-blue-500", "bg-green-500", "bg-yellow-500",
+            "bg-purple-500", "bg-pink-500", "bg-indigo-500", "bg-teal-500",
+            "bg-orange-500", "bg-lime-500", "bg-cyan-500", "bg-rose-500"
+        ];
+
 
         let gameState = {
             players: [], currentPlayerIndex: 0, gameStarted: false, diceRolledThisTurn: false, properties: {},
+            gameLog: [],
             chanceCards: [
                 { text: "前進到起點，獲得 $200", action: async (player) => { await movePlayerTo(player, 0, true); player.money += 200; showMoneyChange(player, 200); } },
                 { text: "支付 $50 維修費", action: async (player) => { player.money -= 50; showMoneyChange(player, -50); playSound('pay'); } },
@@ -774,11 +845,54 @@
             }
         }
 
+        function populatePlayerCountDropdown() {
+            const playerCountSelect = document.getElementById("playerCount");
+            playerCountSelect.innerHTML = '';
+            for (let i = 2; i <= 12; i++) {
+                const option = document.createElement("option");
+                option.value = i;
+                option.text = `${i} 位`;
+                playerCountSelect.appendChild(option);
+            }
+            playerCountSelect.addEventListener('change', updatePlayerNameInputs);
+            updatePlayerNameInputs();
+        }
+
+        function updatePlayerNameInputs() {
+            const playerCount = parseInt(document.getElementById("playerCount").value);
+            const container = document.getElementById("playerNamesContainer");
+            container.innerHTML = '';
+
+            for (let i = 0; i < playerCount; i++) {
+                const inputDiv = document.createElement("div");
+                inputDiv.className = "flex items-center gap-2";
+                const label = document.createElement("label");
+                label.htmlFor = `playerName${i + 1}`;
+                label.className = "text-sm text-[var(--text-secondary)] w-12 whitespace-nowrap";
+                label.innerText = `玩家 ${i + 1}:`;
+                const input = document.createElement("input");
+                input.type = "text";
+                input.id = `playerName${i + 1}`;
+                input.className = "flex-1 p-1.5 border border-[var(--border-color)] rounded-md bg-[var(--panel-bg)] text-[var(--text-primary)] text-sm focus:ring-1 focus:ring-[var(--highlight-color)] focus:outline-none";
+                input.placeholder = `名稱`;
+                inputDiv.appendChild(label);
+                inputDiv.appendChild(input);
+                container.appendChild(inputDiv);
+            }
+        }
+
+
         function initializeEventListeners() {
+            populatePlayerCountDropdown();
             document.getElementById("startGameBtn").addEventListener("click", startGame);
+            document.getElementById("resetGameBtn").addEventListener("click", resetGame);
+            document.getElementById("downloadLogBtn").addEventListener("click", downloadGameLog);
             document.getElementById("rollDiceBtn").addEventListener("click", rollDice);
             document.getElementById("buyPropertyBtn").addEventListener("click", () => buyAndClosePropertyModal(gameState.players[gameState.currentPlayerIndex], gameState.players[gameState.currentPlayerIndex].position));
             document.getElementById("cancelBuyBtn").addEventListener("click", () => {
+                closeBuyPropertyModal(); attemptToEndTurn();
+            });
+            document.getElementById("closeBuyPropertyModalBtn").addEventListener("click", () => {
                 closeBuyPropertyModal(); attemptToEndTurn();
             });
             document.getElementById("payJailFineBtn").addEventListener("click", payJailFine);
@@ -787,7 +901,14 @@
             document.getElementById("closeChanceModalBtn").addEventListener("click", () => {
                 closeChanceModal(); attemptToEndTurn();
             });
+             document.getElementById("closeChanceModalBtnX").addEventListener("click", () => {
+                closeChanceModal(); attemptToEndTurn();
+            });
             document.getElementById("closeActionInfoModalBtn").addEventListener("click", () => {
+                closeActionInfoModal();
+                attemptToEndTurn();
+            });
+            document.getElementById("closeActionInfoModalBtnX").addEventListener("click", () => {
                 closeActionInfoModal();
                 attemptToEndTurn();
             });
@@ -797,42 +918,94 @@
             document.getElementById("diceDisplay").innerHTML = diceInitialHTML;
         }
 
+        function resetGame() {
+            gameState.gameStarted = false;
+            gameState.players = [];
+            gameState.properties = {};
+            gameState.currentPlayerIndex = 0;
+            lastDiceRollTotal = 0;
+            gameState.diceRolledThisTurn = false;
+            gameState.gameLog = [];
+
+            document.querySelectorAll('.player-piece').forEach(p => p.remove());
+            document.querySelectorAll('.owned-property-indicator').forEach(i => i.remove());
+            document.getElementById("gameMessages").innerHTML = "";
+            document.getElementById("diceDisplay").innerHTML = diceInitialHTML;
+            document.getElementById("diceRollPrompt").classList.remove("show");
+
+            document.getElementById("gameSetup").classList.remove("hidden");
+            document.getElementById("playerNamesContainer").classList.remove("hidden");
+            document.getElementById("startGameBtn").disabled = false;
+            // Buttons will be correctly disabled/enabled by updatePlayerDisplay
+
+            document.getElementById("currentPlayerInfoDiv").classList.add("hidden");
+            document.getElementById("diceControlDiv").classList.add("hidden");
+            document.getElementById("playersListDiv").classList.add("hidden");
+            document.getElementById("playersContainer").innerHTML = "";
+
+            updatePlayerDisplay(); // This will handle disabling reset and download buttons
+
+            addMessage("遊戲已重設。請選擇玩家數量並開始新遊戲。");
+            playSound('error');
+        }
+
         function startGame() {
             initializeAudioContext();
+            gameState.gameLog = ["# 大富翁神金利餘 - 遊戲歷程\n"];
 
             const playerCount = parseInt(document.getElementById("playerCount").value);
-            gameState.players = []; gameState.properties = {}; gameState.currentPlayerIndex = 0;
-            gameState.gameStarted = true; gameState.diceRolledThisTurn = false; lastDiceRollTotal = 0;
+            gameState.players = [];
+            gameState.properties = {};
+            gameState.currentPlayerIndex = 0;
+            gameState.gameStarted = true;
+            gameState.diceRolledThisTurn = false;
+            lastDiceRollTotal = 0;
 
             document.querySelectorAll('.player-piece').forEach(p => p.remove());
             document.querySelectorAll('.owned-property-indicator').forEach(i => i.remove());
             document.getElementById("gameMessages").innerHTML = "";
 
             for (let i = 0; i < playerCount; i++) {
+                const nameInput = document.getElementById(`playerName${i + 1}`);
+                const playerName = nameInput && nameInput.value.trim() !== "" ? nameInput.value.trim() : `玩家 ${i + 1}`;
                 const player = {
-                    id: i + 1, name: `玩家 ${i + 1}`, money: 1500, position: 0, properties: [],
-                    color: ["bg-red-500", "bg-blue-500", "bg-green-500", "bg-yellow-500"][i],
+                    id: i + 1, name: playerName, money: 1500, position: 0, properties: [],
+                    color: playerColors[i % playerColors.length],
                     inJail: false, jailTurns: 0, pieceOffsetX: 0, pieceOffsetY: 0
                 };
                 gameState.players.push(player); createPlayerPiece(player);
             }
 
             document.getElementById("gameSetup").classList.add("hidden");
+            document.getElementById("playerNamesContainer").classList.add("hidden");
             document.getElementById("startGameBtn").disabled = true;
+
             document.getElementById("currentPlayerInfoDiv").classList.remove("hidden");
             document.getElementById("diceControlDiv").classList.remove("hidden");
             document.getElementById("playersListDiv").classList.remove("hidden");
             document.getElementById("diceDisplay").innerHTML = diceInitialHTML;
-            updatePlayerDisplay(); addMessage("遊戲開始！輪到 " + gameState.players[0].name);
+
+            updatePlayerDisplay(); // Update UI, which will also set button states
+
+            addMessage(`遊戲開始！**${gameState.players[0].name}** 的回合。`);
         }
 
         function createPlayerPiece(player) {
             const piece = document.createElement("div");
             piece.className = `player-piece ${player.color}`; piece.innerText = player.id;
             const startCell = document.querySelector(`.board-cell[data-position="0"]`);
-            const existingPieces = startCell.querySelectorAll('.player-piece').length;
-            player.pieceOffsetX = (existingPieces % 2 === 0 ? 1 : -1) * Math.floor(existingPieces / 2) * 6;
-            player.pieceOffsetY = (existingPieces % 2 === 1 ? 1 : -1) * Math.floor(existingPieces / 2) * 4;
+            const existingPiecesCount = startCell.querySelectorAll('.player-piece').length;
+
+            const maxPiecesPerRowOrCol = 3;
+            const pieceSpacing = 6;
+            const baseOffsetX = - (maxPiecesPerRowOrCol -1) * pieceSpacing / 2;
+            const baseOffsetY = - (maxPiecesPerRowOrCol -1) * pieceSpacing / 2;
+
+
+            player.pieceOffsetX = baseOffsetX + (existingPiecesCount % maxPiecesPerRowOrCol) * pieceSpacing;
+            player.pieceOffsetY = baseOffsetY + Math.floor(existingPiecesCount / maxPiecesPerRowOrCol) * pieceSpacing;
+
+
             piece.style.setProperty('--current-x', `${player.pieceOffsetX}px`);
             piece.style.setProperty('--current-y', `${player.pieceOffsetY}px`);
             piece.style.transform = `translate(${player.pieceOffsetX}px, ${player.pieceOffsetY}px)`;
@@ -841,15 +1014,29 @@
 
         function updatePlayerDisplay() {
             const diceDisplayEl = document.getElementById("diceDisplay");
+            const resetGameBtn = document.getElementById("resetGameBtn");
+            const downloadLogBtn = document.getElementById("downloadLogBtn");
+
+            // Centralized logic for button states
+            if (gameState.gameStarted) {
+                if (resetGameBtn) resetGameBtn.disabled = false;
+                if (downloadLogBtn) downloadLogBtn.disabled = false;
+            } else {
+                if (resetGameBtn) resetGameBtn.disabled = true;
+                if (downloadLogBtn) downloadLogBtn.disabled = true;
+            }
+
             if (!gameState.gameStarted || gameState.players.length === 0) {
                  document.getElementById("currentPlayerInfoDiv").classList.add("hidden");
                  document.getElementById("diceControlDiv").classList.add("hidden");
                  document.getElementById("playersListDiv").classList.add("hidden");
                  document.getElementById("gameSetup").classList.remove("hidden");
+                 document.getElementById("playerNamesContainer").classList.remove("hidden");
                  document.getElementById("startGameBtn").disabled = false;
                  if(diceDisplayEl) diceDisplayEl.innerHTML = diceInitialHTML;
                  return;
             }
+
 
             const currentPlayer = gameState.players[gameState.currentPlayerIndex];
             document.getElementById("currentPlayerDisplay").innerHTML = `
@@ -858,8 +1045,8 @@
                         <div class="w-5 h-5 sm:w-6 sm:h-6 rounded-full ${currentPlayer.color} mr-2"></div>
                         <span class="font-bold">${currentPlayer.name}</span>
                     </div>
-                    <div class="text-xs sm:text-sm">資金: $${currentPlayer.money}</div>
-                    <div class="text-xs sm:text-sm">位置: ${getPositionName(currentPlayer.position)} ${currentPlayer.inJail ? "<span class='text-red-500 font-semibold'>(監獄中)</span>" : ""}</div>
+                    <div class="text-xs sm:text-sm"><i class="fas fa-coins mr-1 text-yellow-500"></i>資金: $${currentPlayer.money}</div>
+                    <div class="text-xs sm:text-sm"><i class="fas fa-map-marker-alt mr-1 text-red-500"></i>位置: ${getPositionName(currentPlayer.position)} ${currentPlayer.inJail ? "<span class='text-red-500 font-semibold'>(監獄中)</span>" : ""}</div>
                 </div>`;
 
             const playersContainer = document.getElementById("playersContainer");
@@ -872,8 +1059,8 @@
                         <div class="w-5 h-5 sm:w-6 sm:h-6 rounded-full ${player.color} mr-2"></div>
                         <span class="font-bold">${player.name}</span>
                     </div>
-                    <div class="text-xs sm:text-sm">資金: $${player.money} ${player.inJail ? "<span class='text-red-500 font-semibold'>(監獄)</span>" : ""}</div>
-                    <div class="text-xs sm:text-sm">地產: ${player.properties.length}</div>`;
+                    <div class="text-xs sm:text-sm"><i class="fas fa-coins mr-1 text-yellow-500"></i>資金: $${player.money} ${player.inJail ? "<span class='text-red-500 font-semibold'>(監獄)</span>" : ""}</div>
+                    <div class="text-xs sm:text-sm"><i class="fas fa-home mr-1 text-green-500"></i>地產: ${player.properties.length}</div>`;
                 playersContainer.appendChild(playerDiv);
             });
 
@@ -887,6 +1074,15 @@
             } else {
                  rollDiceBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /></svg>擲骰子`;
             }
+        }
+
+        function showDiceRollPrompt(total) {
+            const promptEl = document.getElementById("diceRollPrompt");
+            promptEl.innerText = `擲出 ${total} 點!`;
+            promptEl.classList.add("show");
+            setTimeout(() => {
+                promptEl.classList.remove("show");
+            }, 2000);
         }
 
         async function rollDice() {
@@ -909,20 +1105,21 @@
                 <i class="fas fa-dice-${diceFaces[dice1]} text-2xl sm:text-3xl text-[var(--text-primary)]"></i>
                 <i class="fas fa-dice-${diceFaces[dice2]} text-2xl sm:text-3xl text-[var(--text-primary)]"></i>
             `;
+            showDiceRollPrompt(lastDiceRollTotal);
 
             if (currentPlayer.inJail) {
-                addMessage(`${currentPlayer.name} 在監獄中擲出 ${dice1} 和 ${dice2} (總共 ${lastDiceRollTotal}點)`);
+                addMessage(`**${currentPlayer.name}** 在監獄中擲出 ${dice1} 和 ${dice2} (總共 ${lastDiceRollTotal}點)`);
                 if (dice1 === dice2) {
                     currentPlayer.inJail = false; currentPlayer.jailTurns = 0;
-                    addMessage("擲出相同點數！成功離開監獄！");
+                    addMessage(`擲出相同點數！**${currentPlayer.name}** 成功離開監獄！`);
                     playSound('buy');
                     await movePlayer(currentPlayer, lastDiceRollTotal);
                 } else {
-                    addMessage("未能擲出相同點數，繼續待在監獄。"); currentPlayer.jailTurns++;
+                    addMessage(`未能擲出相同點數，**${currentPlayer.name}** 繼續待在監獄。`); currentPlayer.jailTurns++;
                     playSound('error');
                 }
             } else {
-                addMessage(`${currentPlayer.name} 擲出 ${lastDiceRollTotal} 點`);
+                addMessage(`**${currentPlayer.name}** 擲出 ${lastDiceRollTotal} 點`);
                 await movePlayer(currentPlayer, lastDiceRollTotal);
             }
             updatePlayerDisplay();
@@ -939,7 +1136,7 @@
 
             if (newPosition < oldPosition && steps > 0 && player.position !== 10 ) {
                 player.money += 200; showMoneyChange(player, 200);
-                addMessage(`${player.name} 經過起點，獲得 $200`);
+                addMessage(`**${player.name}** 經過起點，獲得 $200`);
                 playSound('passGo');
             }
 
@@ -965,7 +1162,7 @@
 
             if (collectGoMoney && position === 0 && oldPosition !== 0) {
                  player.money += 200; showMoneyChange(player, 200);
-                 addMessage(`${player.name} 前往起點，獲得 $200`);
+                 addMessage(`**${player.name}** 前往起點，獲得 $200`);
                  playSound('passGo');
             }
             const cellElement = document.querySelector(`.board-cell[data-position="${player.position}"]`);
@@ -1014,20 +1211,20 @@
             let actionIsPending = false;
 
             if (position === 0) {
-                showActionInfoModal("起點", `${player.name} 降落在起點，獲得 $200！`);
+                showActionInfoModal("起點", `**${player.name}** 降落在起點，獲得 $200！`);
                 player.money += 200; showMoneyChange(player, 200);
                 playSound('passGo');
                 actionIsPending = true;
             } else if (cellType === "go_to_jail") {
-                showActionInfoModal("進監獄", `${player.name}，你慘了！直接進監獄！`);
+                showActionInfoModal("進監獄", `**${player.name}**，你慘了！直接進監獄！`);
                 await goToJail(player);
                 actionIsPending = true;
             } else if (boardProperties[position]) {
                 const propData = boardProperties[position];
                 if (propData.type === "tax") {
-                    showActionInfoModal(propData.name, `${player.name} 需支付 ${propData.name} $${propData.price}。`);
+                    showActionInfoModal(propData.name, `**${player.name}** 需支付 ${propData.name} $${propData.price}。`);
                     player.money -= propData.price; showMoneyChange(player, -propData.price);
-                    addMessage(`${player.name} 支付了 $${propData.price} ${propData.name}`);
+                    addMessage(`**${player.name}** 支付了 $${propData.price} ${propData.name}`);
                     playSound('pay');
                     actionIsPending = true;
                 } else if (gameState.properties[position]) {
@@ -1039,15 +1236,15 @@
                         else if (propData.type === "utility") rent = lastDiceRollTotal * (owner.properties.filter(p => boardProperties[p]?.type === "utility").length === 1 ? 4 : 10);
 
                         if (rent > 0) {
-                            showActionInfoModal("支付租金", `${player.name} 降落在 ${owner.name} 的 ${propData.name}，需支付租金 $${rent}。`);
+                            showActionInfoModal("支付租金", `**${player.name}** 降落在 **${owner.name}** 的 ${propData.name}，需支付租金 $${rent}。`);
                             player.money -= rent; owner.money += rent;
                             showMoneyChange(player, -rent); showMoneyChange(owner, rent);
-                            addMessage(`${player.name} 支付 $${rent} 租金給 ${owner.name}`);
+                            addMessage(`**${player.name}** 支付 $${rent} 租金給 **${owner.name}**`);
                             playSound('pay');
                             actionIsPending = true;
                         }
                     } else if (owner === player) {
-                        showActionInfoModal("自家地產", `${player.name} 降落在自己的 ${propData.name}。`);
+                        showActionInfoModal("自家地產", `**${player.name}** 降落在自己的 ${propData.name}。`);
                         actionIsPending = true;
                     }
                 } else if (["property", "railroad", "utility"].includes(propData.type)) {
@@ -1057,10 +1254,10 @@
                  playSound('chance');
                  await drawChanceCard(player); actionIsPending = true;
             } else if (cellType === "special" && position === 20) {
-                showActionInfoModal("自由停車", `${player.name} 在此自由停車，休息一下。`);
+                showActionInfoModal("自由停車", `**${player.name}** 在此自由停車，休息一下。`);
                 actionIsPending = true;
             } else if (cellType === "jail_visit" && position === 10) {
-                 showActionInfoModal("監獄參觀", `${player.name} 只是來監獄參觀。`);
+                 showActionInfoModal("監獄參觀", `**${player.name}** 只是來監獄參觀。`);
                  actionIsPending = true;
             }
 
@@ -1074,7 +1271,7 @@
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                      <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg> ${title}`;
-            document.getElementById("actionInfoDetails").innerText = details;
+            document.getElementById("actionInfoDetails").innerText = details.replace(/\*\*/g, "");
             document.getElementById("actionInfoModal").style.display = "flex";
         }
         function closeActionInfoModal() {
@@ -1097,14 +1294,14 @@
             if (player.money >= property.price) {
                 player.money -= property.price; player.properties.push(position);
                 gameState.properties[position] = player; showMoneyChange(player, -property.price);
-                addMessage(`${player.name} 購買了 ${property.name}，花費 $${property.price}`);
+                addMessage(`**${player.name}** 購買了 ${property.name}，花費 $${property.price}`);
                 playSound('buy');
                 const cell = document.querySelector(`.board-cell[data-position="${position}"]`);
                 const indicator = document.createElement("div");
                 indicator.className = "owned-property-indicator"; indicator.classList.add(player.color);
                 cell.appendChild(indicator);
             } else {
-                addMessage(`${player.name} 資金不足，無法購買 ${property.name}`);
+                addMessage(`**${player.name}** 資金不足，無法購買 ${property.name}`);
                 playSound('error');
             }
             updatePlayerDisplay();
@@ -1116,7 +1313,7 @@
             const card = gameState.chanceCards[Math.floor(Math.random() * gameState.chanceCards.length)];
             document.getElementById("chanceCardDetails").innerText = card.text;
             document.getElementById("chanceModal").style.display = "flex";
-            addMessage(`${player.name} 抽到機會卡：${card.text}`);
+            addMessage(`**${player.name}** 抽到機會卡：${card.text}`);
             await card.action(player);
             checkBankruptcy(player); updatePlayerDisplay();
         }
@@ -1125,6 +1322,7 @@
 
         async function goToJail(player) {
             playSound('jail');
+            addMessage(`**${player.name}** 被送往監獄！`);
             player.inJail = true; player.jailTurns = 0; player.position = 10;
             await movePlayerPieceAnimated(player);
             gameState.diceRolledThisTurn = true;
@@ -1139,10 +1337,10 @@
 
             if (player.inJail && player.money >= 50) {
                 player.money -= 50; player.inJail = false; player.jailTurns = 0;
-                showMoneyChange(player, -50); addMessage(`${player.name} 支付 $50 保釋金，離開監獄`);
+                showMoneyChange(player, -50); addMessage(`**${player.name}** 支付 $50 保釋金，離開監獄`);
                 playSound('buy');
             } else if (player.inJail && player.money < 50) {
-                addMessage(`${player.name} 資金不足，無法支付保釋金`);
+                addMessage(`**${player.name}** 資金不足，無法支付保釋金`);
                 playSound('error');
             }
             updatePlayerDisplay(); attemptToEndTurn();
@@ -1168,13 +1366,13 @@
             const currentPlayer = gameState.players[gameState.currentPlayerIndex];
             if (currentPlayer.inJail && gameState.diceRolledThisTurn) {
                 if (currentPlayer.inJail && currentPlayer.jailTurns >= 3) {
-                    addMessage(`${currentPlayer.name} 服刑滿三回合，必須支付 $50 離開監獄`);
+                    addMessage(`**${currentPlayer.name}** 服刑滿三回合，必須支付 $50 離開監獄`);
                     if (currentPlayer.money >= 50) {
-                        currentPlayer.money -= 50; showMoneyChange(currentPlayer, -50); // Corrected 'player' to 'currentPlayer'
-                        currentPlayer.inJail = false; addMessage(`${currentPlayer.name} 已支付保釋金。`);
+                        currentPlayer.money -= 50; showMoneyChange(currentPlayer, -50);
+                        currentPlayer.inJail = false; addMessage(`**${currentPlayer.name}** 已支付保釋金。`);
                         playSound('buy');
                     } else {
-                        addMessage(`${currentPlayer.name} 資金不足支付保釋金！`);
+                        addMessage(`**${currentPlayer.name}** 資金不足支付保釋金！`);
                         playSound('error');
                     }
                     currentPlayer.jailTurns = 0;
@@ -1191,7 +1389,7 @@
                 document.getElementById("payJailFineBtn").disabled = false;
 
                 if (gameState.players[gameState.currentPlayerIndex]) {
-                    addMessage(`輪到 ${gameState.players[gameState.currentPlayerIndex].name} 的回合`);
+                    addMessage(`輪到 **${gameState.players[gameState.currentPlayerIndex].name}** 的回合`);
                 }
             }
             updatePlayerDisplay();
@@ -1218,9 +1416,10 @@
             const messagesDiv = document.getElementById("gameMessages");
             const msgDiv = document.createElement("div");
             msgDiv.className = "message-new text-[var(--text-secondary)] p-1";
-            msgDiv.innerText = message;
+            msgDiv.innerText = message.replace(/\*\*/g, "");
             messagesDiv.appendChild(msgDiv);
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            gameState.gameLog.push(message);
         }
         function getPositionName(position) {
             if (boardProperties[position]) return boardProperties[position].name;
@@ -1238,7 +1437,7 @@
         function checkBankruptcy(player) {
             if (!player) return;
             if (player.money < 0) {
-                addMessage(`${player.name} 破產！`);
+                addMessage(`**${player.name}** 破產！`);
                 playSound('error');
                 player.properties.forEach(propPos => {
                     delete gameState.properties[propPos];
@@ -1256,7 +1455,7 @@
                 gameState.players.splice(playerIndexInArray, 1);
 
                 if (gameState.players.length === 1) {
-                    addMessage(`${gameState.players[0].name} 獲勝！遊戲結束！`);
+                    addMessage(`**${gameState.players[0].name}** 獲勝！遊戲結束！`);
                     playSound('win'); triggerConfetti();
                     gameState.gameStarted = false; updatePlayerDisplay(); return;
                 } else if (gameState.players.length === 0) {
@@ -1273,6 +1472,9 @@
                 }
                 if (gameState.currentPlayerIndex >= gameState.players.length) {
                     gameState.currentPlayerIndex = 0;
+                }
+                if (gameState.gameStarted && gameState.players.length > 0 && gameState.players[gameState.currentPlayerIndex]) {
+                     addMessage(`輪到 **${gameState.players[gameState.currentPlayerIndex].name}** 的回合`);
                 }
             }
         }
@@ -1306,6 +1508,28 @@
             if (soundEnabled && audioCtx && audioCtx.state === 'suspended') {
                 audioCtx.resume();
             }
+        }
+
+        function downloadGameLog() {
+            if (!gameState.gameLog || gameState.gameLog.length === 0) {
+                addMessage("目前沒有遊戲歷程可下載。");
+                return;
+            }
+            const logContent = gameState.gameLog.join("\n");
+
+            const blob = new Blob([logContent], { type: "text/markdown;charset=utf-8" });
+            const now = new Date();
+            const timestamp = `${now.getFullYear()}${(now.getMonth()+1).toString().padStart(2,'0')}${now.getDate().toString().padStart(2,'0')}_${now.getHours().toString().padStart(2,'0')}${now.getMinutes().toString().padStart(2,'0')}`;
+            const filename = `大富翁遊戲歷程_${timestamp}.txt`;
+
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(link.href);
+            addMessage("遊戲歷程已下載。");
         }
 
         function showRulesModal() { document.getElementById("rulesModal").style.display = "flex"; }
